@@ -1,0 +1,145 @@
+
+
+<div class="page-title">Financial Observer</div>
+<div class="page-subtitle">Status: <%= @budget && @budget.remaining > 0 ? "Optimized Liquidity" : "Review Required" %></div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">Total Budget <span>💼</span></div>
+    <div class="card-value"><span class="currency">₹</span><%= @budget ? number_with_delimiter(@budget.amount.to_i) : "0" %></div>
+    <div class="card-meta">Monthly Allocation</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Spent <span>💸</span></div>
+    <div class="card-value"><span class="currency">₹</span><%= @budget ? number_with_delimiter(@budget.total_spent.to_i) : "0" %></div>
+    <% if @budget %>
+      <% pct = (@budget.total_spent / @budget.amount * 100).round rescue 0 %>
+      <div class="progress-bar"><div class="progress-fill <%= pct > 80 ? 'warn' : '' %>" style="width:<%= [pct,100].min %>%"></div></div>
+      <div class="card-meta"><%= pct %>% Used</div>
+    <% end %>
+  </div>
+  <div class="card">
+    <div class="card-label">Remaining <span>🐷</span></div>
+    <div class="card-value"><span class="currency">₹</span><%= @budget ? number_with_delimiter(@budget.remaining.to_i) : "0" %></div>
+    <% if @budget %>
+      <% avail = (@budget.remaining / @budget.amount * 100).round rescue 0 %>
+      <div class="card-meta"><%= avail %>% Available</div>
+    <% end %>
+  </div>
+</div>
+
+<div class="main-grid">
+  <div class="section">
+    <div class="section-title">New Entry</div>
+    <div class="section-sub">Record a transaction</div>
+
+    <%= form_with model: Expense.new, url: expenses_path do |f| %>
+      <div class="field">
+        <label>Description</label>
+        <%= f.text_field :description, placeholder: "e.g. Server Hosting" %>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Amount</label>
+          <%= f.number_field :amount, placeholder: "0.00", min: 1 %>
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <%= f.date_field :expense_date, value: Date.today %>
+        </div>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <%= f.select :category, Expense::CATEGORIES, {}, {} %>
+      </div>
+      <%= f.hidden_field :budget_id, value: Budget.first&.id %>
+      <%= f.submit "Confirm Transaction", class: "btn-confirm" %>
+    <% end %>
+
+    <div class="budget-slider-section">
+      <div class="budget-slider-title">Set Budget</div>
+      <div class="budget-slider-sub">Redefine your monthly ceiling</div>
+      <%= form_with model: @budget || Budget.new,
+          url: @budget ? budget_path : budget_path,
+          method: @budget ? :patch : :post do |f| %>
+        <%= f.number_field :amount,
+            class: "btn-confirm",
+            placeholder: "Enter budget amount e.g. 85000",
+            style: "text-align:left;letter-spacing:0;text-transform:none;font-size:14px;" %>
+        <%= f.submit @budget ? "Update Budget" : "Set Budget", class: "btn-confirm", style: "margin-top:8px;" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="activity-header">
+      <div>
+        <div class="section-title">Recent Activity</div>
+        <div class="section-sub">Last 7 operational days</div>
+      </div>
+      <a href="#" class="export-btn">Export CSV</a>
+    </div>
+
+    <% if @expenses.any? %>
+      <% cat_icons = { "food" => "🍽", "transport" => "🚗", "shopping" => "🛍", "health" => "💊", "entertainment" => "🎬", "other" => "📦" } %>
+      <% @expenses.each do |e| %>
+        <div class="expense-item">
+          <div class="expense-icon"><%= cat_icons[e.category] || "📦" %></div>
+          <div class="expense-info">
+            <div class="expense-name"><%= e.description %></div>
+            <div class="expense-meta"><%= e.expense_date.strftime("%b %d") %> • <%= e.category.upcase %></div>
+          </div>
+          <div class="expense-right">
+            <div class="expense-amount">-₹<%= number_with_delimiter(e.amount.to_i) %></div>
+            <div class="expense-status status-cleared">CLEARED</div>
+          </div>
+          <%= button_to "✕", expense_path(e), method: :delete, class: "delete-btn" %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="empty">No transactions yet.</div>
+    <% end %>
+
+    <a href="#" class="view-ledger">View Full Ledger</a>
+  </div>
+</div>
+
+<div class="bottom-cards">
+  <div class="bottom-card">
+    <div class="bottom-icon icon-blue">📈</div>
+    <div>
+      <div class="bottom-label">Savings Rate</div>
+      <div class="bottom-value">
+        <% if @budget && @budget.amount > 0 %>
+          <%= ((@budget.remaining / @budget.amount) * 100).round(1) %>%
+        <% else %>
+          0%
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-red">⚠</div>
+    <div>
+      <div class="bottom-label">High Burn</div>
+      <div class="bottom-value" style="font-size:16px;">
+        <% top_cat = Expense.group(:category).sum(:amount).max_by{|k,v| v} %>
+        <%= top_cat ? top_cat[0].capitalize : "None" %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">📅</div>
+    <div>
+      <div class="bottom-label">Days Left</div>
+      <div class="bottom-value"><%= (Date.today.end_of_month - Date.today).to_i %></div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">⚙</div>
+    <div>
+      <div class="bottom-label">Total Entries</div>
+      <div class="bottom-value"><%= Expense.count %></div>
+    </div>
+  </div>
+</div>

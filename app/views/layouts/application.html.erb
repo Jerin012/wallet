@@ -1,0 +1,35 @@
+
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Expense Tracker</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>                                                                  
+    <nav>
+      <%= link_to "Overview", root_path %>
+      <%= link_to "Daily",    daily_path %>
+      <%= link_to "Monthly",  monthly_path %>
+      <%= link_to "Savings",  savings_path %>
+    </nav>
+
+    <div class="container">
+      <% if notice %>
+        <div class="alert-success"><%= notice %></div>
+      <% end %>
+      <% if alert %>
+        <div class="alert-danger"><%= alert %></div>
+      <% end %>
+      <%= yield %>
+    </div>
+  </body>
+</html>
+
+

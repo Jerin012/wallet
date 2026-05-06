@@ -1,0 +1,175 @@
+<div class="page-title">Savings Tracker</div>
+<div class="page-subtitle">Your financial performance for <%= @year %></div>
+
+<%# Top summary cards %>
+<div class="cards" style="grid-template-columns:repeat(4,1fr);">
+  <% total_spent_yr = @monthly_data.sum { |m| m[:spent] } %>
+  <% total_saved_yr = @budget ? (@budget.amount * 12) - total_spent_yr : 0 %>
+  <% avg_monthly    = (total_spent_yr / 12).round %>
+  <% best_month     = @monthly_data.min_by { |m| m[:spent] } %>
+
+  <div class="card">
+    <div class="card-label">Total Spent (<%= @year %>)</div>
+    <div class="card-value" style="font-size:26px;color:#E24B4A;">
+      <span class="currency">₹</span><%= number_with_delimiter(total_spent_yr.to_i) %>
+    </div>
+    <div class="card-meta">Across all months</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Saved (<%= @year %>)</div>
+    <div class="card-value" style="font-size:26px;color:<%= total_saved_yr >= 0 ? '#639922' : '#E24B4A' %>;">
+      <span class="currency">₹</span><%= number_with_delimiter(total_saved_yr.abs.to_i) %>
+    </div>
+    <div class="card-meta"><%= total_saved_yr >= 0 ? "Surplus" : "Deficit" %></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Avg Monthly Spend</div>
+    <div class="card-value" style="font-size:26px;">
+      <span class="currency">₹</span><%= number_with_delimiter(avg_monthly) %>
+    </div>
+    <div class="card-meta">Per month average</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Best Month</div>
+    <div class="card-value" style="font-size:26px;color:#639922;">
+      <%= best_month[:month] %>
+    </div>
+    <div class="card-meta">Lowest spending</div>
+  </div>
+</div>
+
+<%# Chart + Table grid %>
+<div class="main-grid">
+
+  <%# Bar chart %>
+  <div class="section">
+    <div class="section-title">Monthly Overview</div>
+    <div class="section-sub">Spent vs Saved per month</div>
+    <canvas id="savingsChart" style="max-height:280px;"></canvas>
+  </div>
+
+  <%# Month by month table %>
+  <div class="section">
+    <div class="section-title">Month-by-Month</div>
+    <div class="section-sub">Detailed breakdown for <%= @year %></div>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:left;letter-spacing:1px;">MONTH</th>
+          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">SPENT</th>
+          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">SAVED</th>
+          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @monthly_data.each do |m| %>
+          <% saved = m[:saved] || 0 %>
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:#aaa;"><%= m[:month] %></td>
+            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:#E24B4A;text-align:right;">-₹<%= number_with_delimiter(m[:spent].to_i) %></td>
+            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:<%= saved >= 0 ? '#639922' : '#E24B4A' %>;text-align:right;">
+              <%= saved >= 0 ? "+" : "-" %>₹<%= number_with_delimiter(saved.abs.to_i) %>
+            </td>
+            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;text-align:right;">
+              <% if m[:spent] == 0 %>
+                <span style="font-size:10px;color:#333;letter-spacing:1px;">NO DATA</span>
+              <% elsif saved >= 0 %>
+                <span style="font-size:10px;color:#639922;letter-spacing:1px;">SAVED</span>
+              <% else %>
+                <span style="font-size:10px;color:#E24B4A;letter-spacing:1px;">OVER</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%# Bottom stat cards %>
+<div class="bottom-cards">
+  <div class="bottom-card">
+    <div class="bottom-icon icon-blue">📈</div>
+    <div>
+      <div class="bottom-label">Savings Rate</div>
+      <div class="bottom-value">
+        <% rate = @budget && @budget.amount > 0 ? ((total_saved_yr / (@budget.amount * 12)) * 100).round(1) : 0 %>
+        <%= rate %>%
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">📆</div>
+    <div>
+      <div class="bottom-label">Months Tracked</div>
+      <div class="bottom-value"><%= @monthly_data.count { |m| m[:spent] > 0 } %></div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-red">🔥</div>
+    <div>
+      <div class="bottom-label">Worst Month</div>
+      <div class="bottom-value" style="font-size:16px;">
+        <%= @monthly_data.max_by { |m| m[:spent] }[:month] %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">🎯</div>
+    <div>
+      <div class="bottom-label">Monthly Budget</div>
+      <div class="bottom-value" style="font-size:16px;">
+        ₹<%= @budget ? number_with_delimiter(@budget.amount.to_i) : "Not set" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const monthly = <%= @monthly_data.to_json.html_safe %>;
+  new Chart(document.getElementById('savingsChart'), {
+    type: 'bar',
+    data: {
+      labels: monthly.map(m => m.month),
+      datasets: [
+        {
+          label: 'Spent',
+          data: monthly.map(m => m.spent),
+          backgroundColor: '#3a1010',
+          borderColor: '#E24B4A',
+          borderWidth: 1,
+          borderRadius: 4
+        },
+        {
+          label: 'Saved',
+          data: monthly.map(m => m.saved || 0),
+          backgroundColor: '#1a2e1a',
+          borderColor: '#639922',
+          borderWidth: 1,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#666', font: { size: 11 }, boxWidth: 12 }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#555', font: { size: 11 } }, grid: { color: '#1a1a1a' } },
+        y: {
+          ticks: {
+            color: '#555',
+            font: { size: 11 },
+            callback: v => '₹' + v.toLocaleString('en-IN')
+          },
+          grid: { color: '#1a1a1a' }
+        }
+      }
+    }
+  });
+</script>

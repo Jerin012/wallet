@@ -1,0 +1,128 @@
+<div class="page-title">Daily Tracker</div>
+<div class="page-subtitle">View expenses for a specific date</div>
+
+<%# Date picker %>
+<div class="section" style="margin-bottom:12px;">
+  <%= form_with url: daily_path, method: :get do |f| %>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="field" style="margin:0;flex:1;max-width:220px;">
+        <label>Select Date</label>
+        <%= f.date_field :date, value: @date, style: "margin:0;" %>
+      </div>
+      <%= f.submit "View", class: "btn-confirm", style: "width:auto;padding:12px 28px;margin:0;" %>
+    </div>
+  <% end %>
+</div>
+
+<%# Summary cards %>
+<div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px;">
+  <div class="card">
+    <div class="card-label">Date</div>
+    <div class="card-value" style="font-size:22px;"><%= @date.strftime("%b %d, %Y") %></div>
+    <div class="card-meta"><%= @date.strftime("%A") %></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total Spent</div>
+    <div class="card-value" style="color:#E24B4A;">
+      <span class="currency">₹</span><%= number_with_delimiter(@total.to_i) %>
+    </div>
+    <div class="card-meta"><%= @expenses.count %> transaction(s)</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Budget Left Today</div>
+    <% daily_budget = @budget ? (@budget.amount / 30).round : 0 %>
+    <% left = daily_budget - @total %>
+    <div class="card-value" style="color:<%= left >= 0 ? '#639922' : '#E24B4A' %>;">
+      <span class="currency">₹</span><%= number_with_delimiter(left.abs.to_i) %>
+    </div>
+    <div class="card-meta"><%= left >= 0 ? "Under daily limit" : "Over daily limit" %></div>
+  </div>
+</div>
+
+<%# Expense list %>
+<div class="main-grid">
+  <div class="section" style="grid-column:1/-1;">
+    <div class="activity-header">
+      <div>
+        <div class="section-title">Transactions on <%= @date.strftime("%b %d") %></div>
+        <div class="section-sub">All expenses recorded for this date</div>
+      </div>
+    </div>
+
+    <% cat_icons = { "food" => "🍽", "transport" => "🚗", "shopping" => "🛍", "health" => "💊", "entertainment" => "🎬", "other" => "📦" } %>
+
+    <% if @expenses.any? %>
+      <% @expenses.each do |e| %>
+        <div class="expense-item">
+          <div class="expense-icon"><%= cat_icons[e.category] || "📦" %></div>
+          <div class="expense-info">
+            <div class="expense-name"><%= e.description %></div>
+            <div class="expense-meta"><%= e.category.upcase %></div>
+          </div>
+          <div class="expense-right">
+            <div class="expense-amount">-₹<%= number_with_delimiter(e.amount.to_i) %></div>
+            <div class="expense-status status-cleared">CLEARED</div>
+          </div>
+          <%= button_to "✕", expense_path(e), method: :delete, class: "delete-btn" %>
+        </div>
+      <% end %>
+
+      <%# Category breakdown %>
+      <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #222;">
+        <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#555;margin-bottom:12px;">Breakdown by category</div>
+        <% @expenses.group_by(&:category).each do |cat, items| %>
+          <% cat_total = items.sum(&:amount) %>
+          <% cat_pct = @total > 0 ? (cat_total / @total * 100).round : 0 %>
+          <div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+              <span style="color:#aaa;"><%= cat_icons[cat] %> <%= cat.capitalize %></span>
+              <span style="color:#fff;font-weight:500;">₹<%= number_with_delimiter(cat_total.to_i) %> <span style="color:#555;font-size:11px;">(<%= cat_pct %>%)</span></span>
+            </div>
+            <div class="progress-bar" style="height:4px;">
+              <div class="progress-fill good" style="width:<%= cat_pct %>%;"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+    <% else %>
+      <div class="empty">No transactions on <%= @date.strftime("%B %d, %Y") %>.</div>
+    <% end %>
+  </div>
+</div>
+
+<%# Bottom stat cards %>
+<div class="bottom-cards">
+  <div class="bottom-card">
+    <div class="bottom-icon icon-blue">📅</div>
+    <div>
+      <div class="bottom-label">Day of Month</div>
+      <div class="bottom-value"><%= @date.day %></div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">🧾</div>
+    <div>
+      <div class="bottom-label">Entries</div>
+      <div class="bottom-value"><%= @expenses.count %></div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-red">💸</div>
+    <div>
+      <div class="bottom-label">Highest Expense</div>
+      <div class="bottom-value" style="font-size:16px;">
+        ₹<%= @expenses.any? ? number_with_delimiter(@expenses.max_by(&:amount).amount.to_i) : 0 %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">📊</div>
+    <div>
+      <div class="bottom-label">Avg per Entry</div>
+      <div class="bottom-value" style="font-size:16px;">
+        ₹<%= @expenses.any? ? number_with_delimiter((@total / @expenses.count).round) : 0 %>
+      </div>
+    </div>
+  </div>
+</div>

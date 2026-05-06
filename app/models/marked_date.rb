@@ -1,0 +1,2 @@
+class MarkedDate < ApplicationRecord
+end

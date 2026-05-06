@@ -1,0 +1,15 @@
+<%# <h1>Budgets#edit</h1>
+<p>Find me in app/views/budgets/edit.html.erb</p> %>
+<h1>Edit Budget</h1>
+
+<div class="card mt-4" style="max-width: 400px;">
+  <div class="card-body">
+    <%= form_with model: @budget, url: budget_path, method: :patch do |f| %>
+      <div class="mb-3">
+        <%= f.label :amount, "Monthly Budget (₹)" %>
+        <%= f.number_field :amount, class: "form-control", min: 1 %>
+      </div>
+      <%= f.submit "Update Budget", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

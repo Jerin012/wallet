@@ -1,0 +1,23 @@
+<%# <h1>Budgets#new</h1>
+<p>Find me in app/views/budgets/new.html.erb</p> %>
+<h1>Set Your Budget</h1>
+
+<div class="card mt-4" style="max-width: 400px;">
+  <div class="card-body">
+    <%= form_with model: @budget, url: budget_path do |f| %>
+      <% if @budget.errors.any? %>
+        <div class="alert alert-danger">
+          <%= @budget.errors.full_messages.first %>
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= f.label :amount, "Monthly Budget (₹)" %>
+        <%= f.number_field :amount, class: "form-control",
+            placeholder: "e.g. 50000", min: 1 %>
+      </div>
+
+      <%= f.submit "Set Budget", class: "btn btn-primary" %>
+    <% end %>
+  </div>
+</div>

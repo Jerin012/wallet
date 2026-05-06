@@ -1,0 +1,43 @@
+<%= form_with model: Expense.new, url: expenses_path do |f| %>
+  <div class="row g-2">
+    <div class="col-md-3">
+      <%= f.label :description, "Description" %>
+      <%= f.text_field :description, class: "form-control",
+          placeholder: "e.g. Groceries" %>
+    </div>
+
+    <div class="col-md-2">
+      <%= f.label :amount, "Amount (₹)" %>
+      <%= f.number_field :amount, class: "form-control",
+          placeholder: "500", min: 1 %>
+    </div>
+
+    <div class="col-md-2">
+      <%= f.label :expense_date, "Date" %>
+      <%= f.date_field :expense_date, class: "form-control",
+          value: Date.today %>
+    </div>
+
+    <div class="col-md-2">
+      <%= f.label :category, "Category" %>
+      <%= f.select :category, Expense::CATEGORIES,
+          {}, class: "form-select" %>
+    </div>
+
+    <div class="col-md-2">
+      <%= f.label :budget_id, "Budget" %>
+      <%= f.hidden_field :budget_id, value: Budget.first&.id %>
+      <div class="mt-1">
+        <% if Budget.first %>
+          <span class="badge bg-success">Budget set ✓</span>
+        <% else %>
+          <span class="badge bg-danger">No budget set!</span>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="col-md-1 d-flex align-items-end">
+      <%= f.submit "Add", class: "btn btn-primary w-100" %>
+    </div>
+  </div>
+<% end %>

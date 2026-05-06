@@ -1,0 +1,241 @@
+<div class="page-title">Monthly Tracker</div>
+<div class="page-subtitle">Detailed breakdown for <%= @month.strftime("%B %Y") %></div>
+
+<%# Month picker %>
+<div class="section" style="margin-bottom:12px;">
+  <%= form_with url: monthly_path, method: :get do |f| %>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="field" style="margin:0;flex:1;max-width:220px;">
+        <label>Select Month</label>
+        <%= f.month_field :month, value: @month.strftime("%Y-%m") %>
+      </div>
+      <%= f.submit "View", class: "btn-confirm",
+          style: "width:auto;padding:12px 28px;margin:0;" %>
+    </div>
+  <% end %>
+</div>
+
+<%# Summary cards %>
+<% spent = @expenses.sum(:amount) %>
+<% saved = @budget ? @budget.amount - spent : 0 %>
+<% pct   = @budget && @budget.amount > 0 ? (spent / @budget.amount * 100).round : 0 %>
+
+<div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px;">
+  <div class="card">
+    <div class="clabel">Total Spent</div>
+    <div class="card-value" style="color:#E24B4A;">
+      <span class="currency">₹</span><%= number_with_delimiter(spent.to_i) %>
+    </div>
+    <div class="card-meta"><%= @expenses.count %> transactions</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Monthly Budget</div>
+    <div class="card-value info">
+      <span class="currency">₹</span><%= @budget ? number_with_delimiter(@budget.amount.to_i) : "Not set" %>
+    </div>
+    <div class="card-meta">Monthly allocation</div>
+  </div>
+  <div class="card">
+    <div class="clabel">Saved This Month</div>
+    <div class="card-value" style="color:<%= saved >= 0 ? '#639922' : '#E24B4A' %>;">
+      <span class="currency">₹</span><%= number_with_delimiter(saved.abs.to_i) %>
+    </div>
+    <div class="card-meta"><%= saved >= 0 ? "Surplus" : "Deficit" %></div>
+  </div>
+  <div class="card">
+    <div class="clabel">Budget Used</div>
+    <div class="card-value" style="color:<%= pct > 80 ? '#E24B4A' : '#fff' %>;">
+      <%= pct %>%
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill <%= pct > 100 ? 'over' : pct > 80 ? 'warn' : 'good' %>"
+           style="width:<%= [pct,100].min %>%"></div>
+    </div>
+  </div>
+</div>
+
+<%# Charts + Expense list %>
+<div class="main-grid" style="margin-bottom:12px;">
+
+  <%# Left — charts %>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <div class="section">
+      <div class="stitle">Spending by category</div>
+      <div class="ssub">Where your money went this month</div>
+      <div style="display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
+        <% cat_colors = { "food"=>"#BA7517","transport"=>"#185FA5","shopping"=>"#993556","health"=>"#639922","entertainment"=>"#534AB7","other"=>"#5F5E5A" } %>
+        <% @by_cat.each do |cat, val| %>
+          <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#555;">
+            <span style="width:10px;height:10px;border-radius:2px;background:<%= cat_colors[cat] %>;"></span>
+            <%= cat.capitalize %> — ₹<%= number_with_delimiter(val.to_i) %>
+          </span>
+        <% end %>
+      </div>
+      <div style="position:relative;height:200px;">
+        <canvas id="catChart"></canvas>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="stitle">Daily spending</div>
+      <div class="ssub">Expense pattern across the month</div>
+      <div style="position:relative;height:180px;">
+        <canvas id="dailyChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <%# Right — expense list %>
+  <div class="section">
+    <div class="activity-header">
+      <div>
+        <div class="stitle">All Transactions</div>
+        <div class="ssub"><%= @month.strftime("%B %Y") %> — <%= @expenses.count %> entries</div>
+      </div>
+    </div>
+
+    <% cat_icons = { "food"=>"🍽","transport"=>"🚗","shopping"=>"🛍","health"=>"💊","entertainment"=>"🎬","other"=>"📦" } %>
+
+    <% if @expenses.any? %>
+      <div style="max-height:460px;overflow-y:auto;">
+        <% @expenses.order(expense_date: :desc).each do |e| %>
+          <div class="expense-item">
+            <div class="expense-icon"><%= cat_icons[e.category] || "📦" %></div>
+            <div class="expense-info">
+              <div class="expense-name"><%= e.description %></div>
+              <div class="expense-meta">
+                <%= e.expense_date.strftime("%b %d") %> •
+                <%= e.category.upcase %>
+              </div>
+            </div>
+            <div class="expense-right">
+              <div class="expense-amount">-₹<%= number_with_delimiter(e.amount.to_i) %></div>
+              <div class="expense-status status-cleared">CLEARED</div>
+            </div>
+            <%= button_to "✕", expense_path(e),
+                method: :delete, class: "delete-btn" %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty">No transactions this month.</div>
+    <% end %>
+  </div>
+</div>
+
+<%# Bottom stat cards %>
+<div class="bottom-cards">
+  <div class="bottom-card">
+    <div class="bottom-icon icon-red">💸</div>
+    <div>
+      <div class="bottom-label">Highest Expense</div>
+      <div class="bottom-value" style="font-size:15px;">
+        ₹<%= @expenses.any? ? number_with_delimiter(@expenses.max_by(&:amount).amount.to_i) : 0 %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">📊</div>
+    <div>
+      <div class="bottom-label">Avg per Day</div>
+      <div class="bottom-value" style="font-size:15px;">
+        ₹<%= number_with_delimiter((spent / Date.today.day).round) %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-blue">🏆</div>
+    <div>
+      <div class="bottom-label">Top Category</div>
+      <div class="bottom-value" style="font-size:15px;">
+        <% top = @by_cat.max_by { |k,v| v } %>
+        <%= top ? top[0].capitalize : "None" %>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-card">
+    <div class="bottom-icon icon-gray">📅</div>
+    <div>
+      <div class="bottom-label">Days Remaining</div>
+      <div class="bottom-value">
+        <%= (Date.today.end_of_month - Date.today).to_i %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Chart scripts %>
+<script>
+  const catData  = <%= @by_cat.to_json.html_safe %>;
+  const catColors = {
+    food:'#BA7517', transport:'#185FA5', shopping:'#993556',
+    health:'#639922', entertainment:'#534AB7', other:'#5F5E5A'
+  };
+
+  new Chart(document.getElementById('catChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(catData).map(k => k.charAt(0).toUpperCase() + k.slice(1)),
+      datasets: [{
+        data: Object.values(catData),
+        backgroundColor: Object.keys(catData).map(k => catColors[k] || '#5F5E5A'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  });
+
+  <%
+    days_in_month = @month.end_of_month.day
+    daily_totals  = (1..days_in_month).map do |d|
+      @expenses.select { |e| e.expense_date.day == d }.sum(&:amount)
+    end
+  %>
+
+  new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: <%= (1..@month.end_of_month.day).to_a.to_json.html_safe %>,
+      datasets: [{
+        data: <%= daily_totals.to_json.html_safe %>,
+        backgroundColor: '#185FA5',
+        borderRadius: 3,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          ticks: {
+            color: '#444',
+            font: { size: 10 },
+            autoSkip: true,
+            maxTicksLimit: 10
+          },
+          grid: { color: '#1a1a1a' }
+        },
+        y: {
+          ticks: {
+            color: '#444',
+            font: { size: 10 },
+            callback: v => '₹' + v.toLocaleString('en-IN')
+          },
+          grid: { color: '#1a1a1a' }
+        }
+      }
+    }
+  });
+</script>
