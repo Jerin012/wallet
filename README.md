@@ -7,5 +7,7 @@
   - Shows key insights such as total spent, remaining budget, savings rate, and top spending category.
   - Uses SQLite for storage and Chart.js for visual spending reports.
   - Designed as a simple single-budget tracker with clean CRUD-based expense management.
+  - 📄 Download class uml diagram PDF: [Click here](ET Diagram.drawio.pdf)
+
   
 
