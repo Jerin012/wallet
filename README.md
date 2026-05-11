@@ -8,7 +8,7 @@
   - Uses SQLite for storage and Chart.js for visual spending reports.
   - Designed as a simple single-budget tracker with clean CRUD-based expense management.
 
-   📄 Download class uml diagram PDF: [Click here](ET Diagram.drawio.pdf)
+   📄 Download class uml diagram PDF: [Click here](ET.drawio.pdf)
 
   
 
