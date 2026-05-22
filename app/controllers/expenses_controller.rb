@@ -4,7 +4,16 @@ class ExpensesController < ApplicationController
   end
 
   def create
+    current_month = Date.today.strftime("%B %Y")
+    budget = Budget.find_by(month: current_month)
+    if budget.nil?
+        redirect_to root_path, alert: "Set budget first"
+        return
+    end
     @expense = Expense.new(expense_params)
+    @expense.month = current_month
+    @expense.budget = budget
+
     if @expense.save
       redirect_to root_path, notice: "Expense added successfully!"
     else
@@ -21,6 +30,6 @@ class ExpensesController < ApplicationController
   private
 
   def expense_params
-    params.require(:expense).permit(:description, :amount, :category, :expense_date, :budget_id)
+    params.require(:expense).permit(:description, :amount, :category, :expense_date)
   end
 end

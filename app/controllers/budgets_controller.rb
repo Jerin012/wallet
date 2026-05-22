@@ -5,6 +5,7 @@ class BudgetsController < ApplicationController
 
   def create
     @budget = Budget.new(budget_params)
+    @budget.month = Date.today.strftime("%B %Y")
     if @budget.save
       redirect_to root_path, notice: "Budget set successfully!"
     else
@@ -13,11 +14,11 @@ class BudgetsController < ApplicationController
   end
 
   def edit
-    @budget = Budget.first
+    @budget = Budget.find_by(month: Date.today.strftime("%B %Y"))
   end
 
   def update
-    @budget = Budget.first
+    @budget = Budget.find_by(month: Date.today.strftime("%B %Y"))
     if @budget.update(budget_params)
       redirect_to root_path, notice: "Budget updated successfully!"
     else

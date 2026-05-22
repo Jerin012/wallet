@@ -4,9 +4,10 @@
 <%# Top summary cards %>
 <div class="cards" style="grid-template-columns:repeat(4,1fr);">
   <% total_spent_yr = @monthly_data.sum { |m| m[:spent] } %>
-  <% total_saved_yr = @budget ? (@budget.amount * 12) - total_spent_yr : 0 %>
-  <% avg_monthly    = (total_spent_yr / 12).round %>
-  <% best_month     = @monthly_data.min_by { |m| m[:spent] } %>
+  <% total_budget_yr = @monthly_data.sum { |m| m[:budget] || 0 } %>
+  <% total_saved_yr = total_budget_yr - total_spent_yr %>
+  <% avg_monthly    = (total_spent_yr.to_f / 12).round %>
+  <% best_month = @monthly_data.compact.min_by { |m| m[:spent].to_i } %>
 
   <div class="card">
     <div class="card-label">Total Spent (<%= @year %>)</div>
@@ -32,7 +33,7 @@
   <div class="card">
     <div class="card-label">Best Month</div>
     <div class="card-value" style="font-size:26px;color:#639922;">
-      <%= best_month[:month] %>
+      <%= best_month ? best_month[:month] : "No Data" %>
     </div>
     <div class="card-meta">Lowest spending</div>
   </div>
@@ -94,7 +95,7 @@
     <div>
       <div class="bottom-label">Savings Rate</div>
       <div class="bottom-value">
-        <% rate = @budget && @budget.amount > 0 ? ((total_saved_yr / (@budget.amount * 12)) * 100).round(1) : 0 %>
+        <% rate = total_budget_yr > 0 ? ((total_saved_yr.to_f / total_budget_yr) * 100).round(1) : 0 %>
         <%= rate %>%
       </div>
     </div>
@@ -111,7 +112,8 @@
     <div>
       <div class="bottom-label">Worst Month</div>
       <div class="bottom-value" style="font-size:16px;">
-        <%= @monthly_data.max_by { |m| m[:spent] }[:month] %>
+        <% worst = @monthly_data.max_by { |m| m[:spent] } %>
+        <%= worst ? worst[:month] : "No Data" %>
       </div>
     </div>
   </div>

@@ -10,10 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_061936) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_21_073131) do
   create_table "budgets", force: :cascade do |t|
     t.decimal "amount"
+    t.date "budget_month"
     t.datetime "created_at", null: false
+    t.string "month"
     t.datetime "updated_at", null: false
   end
 
@@ -24,6 +26,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_061936) do
     t.datetime "created_at", null: false
     t.string "description"
     t.date "expense_date"
+    t.string "month"
     t.datetime "updated_at", null: false
     t.index ["budget_id"], name: "index_expenses_on_budget_id"
   end
