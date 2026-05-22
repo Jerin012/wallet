@@ -1,7 +1,22 @@
 
-
 <div class="page-title">Financial Observer</div>
-<div class="page-subtitle">Status: <%= @budget && @budget.remaining > 0 ? "Optimized Liquidity" : "Review Required" %></div>
+<div class="page-subtitle"><%= @selected_month.strftime("%B %Y") %> budget, spending, and remaining balance</div>
+
+<div class="section" style="margin-bottom: 1.5rem;">
+  <div class="section-title">Tracking Month</div>
+  <div class="section-sub">Switch month to manage current or previous budgets and expenses</div>
+  <%= form_with url: root_path, method: :get, local: true do %>
+    <div class="field-row">
+      <div class="field">
+        <label>Month</label>
+        <%= month_field_tag :month, @selected_month.strftime("%Y-%m") %>
+      </div>
+      <div class="field" style="align-self:end;">
+        <%= submit_tag "View Month", class: "btn-confirm" %>
+      </div>
+    </div>
+  <% end %>
+</div>
 
 <div class="cards">
   <div class="card">
@@ -45,7 +60,7 @@
         </div>
         <div class="field">
           <label>Date</label>
-          <%= f.date_field :expense_date, value: Date.today %>
+          <%= f.date_field :expense_date, value: @selected_month == Date.today.beginning_of_month ? Date.today : @selected_month.end_of_month %>
         </div>
       </div>
       <div class="field">
@@ -62,6 +77,11 @@
      <%= form_with model: @budget || Budget.new,
       url: @budget ? budget_path(@budget) : budget_path,
       method: @budget ? :patch : :post do |f| %>
+
+  <%= f.month_field :month,
+      value: @selected_month.strftime("%Y-%m"),
+      class: "btn-confirm",
+      style: "text-align:left;letter-spacing:0;text-transform:none;font-size:14px;" %>
 
   <!-- Main Budget Field -->
   <%= f.number_field :amount,
@@ -114,7 +134,7 @@
           </div>
           <div class="expense-right">
             <div class="expense-amount">-₹<%= number_with_delimiter(e.amount.to_i) %></div>
-            <div class="expense-status status-cleared">CLEARED</div>
+            <div class="expense-status status-cleared"><%= e.month %></div>
           </div>
           <%= button_to "✕", expense_path(e), method: :delete, class: "delete-btn" %>
         </div>
@@ -135,7 +155,7 @@
       <div class="bottom-value">
         <% if @budget && @budget.amount > 0 %>
           <% spent = @budget.total_spent %>
-          <% rate = @budget.amount > 0 ? ((spent.to_f / @budget.amount) * 100).round(1) : 0 %>
+          <% rate = @budget.amount > 0 ? (((@budget.amount - spent).to_f / @budget.amount) * 100).round(1) : 0 %>
           <%= rate %>%
         <% else %>
           0%
@@ -148,7 +168,7 @@
     <div>
       <div class="bottom-label">High Burn</div>
       <div class="bottom-value" style="font-size:16px;">
-        <% expenses = Expense.where(expense_date: Date.today.beginning_of_month..Date.today.end_of_month)
+        <% expenses = Expense.where(expense_date: @selected_month.beginning_of_month..@selected_month.end_of_month)
                      .group(:category)
                      .sum(:amount) %>
 <% top_cat = expenses.max_by { |_, v| v } %>
@@ -161,14 +181,14 @@
     <div class="bottom-icon icon-gray">📅</div>
     <div>
       <div class="bottom-label">Days Left</div>
-      <div class="bottom-value"><%= (Date.today.end_of_month - Date.today).to_i %></div>
+      <div class="bottom-value"><%= (@selected_month.end_of_month - [Date.today, @selected_month.beginning_of_month].max).to_i.clamp(0, 31) %></div>
     </div>
   </div>
   <div class="bottom-card">
     <div class="bottom-icon icon-gray">⚙</div>
     <div>
       <div class="bottom-label">Total Entries</div>
-      <div class="bottom-value"><%= Expense.count %></div>
+      <div class="bottom-value"><%= @expenses.count %></div>
     </div>
   </div>
 </div>

@@ -58,9 +58,9 @@
       <thead>
         <tr>
           <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:left;letter-spacing:1px;">MONTH</th>
+          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">BUDGET</th>
           <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">SPENT</th>
           <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">SAVED</th>
-          <th style="font-size:11px;color:#555;padding:8px 0;border-bottom:1px solid #222;text-align:right;letter-spacing:1px;">STATUS</th>
         </tr>
       </thead>
       <tbody>
@@ -68,18 +68,12 @@
           <% saved = m[:saved] || 0 %>
           <tr>
             <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:#aaa;"><%= m[:month] %></td>
+            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:#fff;text-align:right;">
+              ₹<%= number_with_delimiter(m[:budget].to_i) %>
+            </td>
             <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:#E24B4A;text-align:right;">-₹<%= number_with_delimiter(m[:spent].to_i) %></td>
             <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;font-size:13px;color:<%= saved >= 0 ? '#639922' : '#E24B4A' %>;text-align:right;">
               <%= saved >= 0 ? "+" : "-" %>₹<%= number_with_delimiter(saved.abs.to_i) %>
-            </td>
-            <td style="padding:10px 0;border-bottom:1px solid #1a1a1a;text-align:right;">
-              <% if m[:spent] == 0 %>
-                <span style="font-size:10px;color:#333;letter-spacing:1px;">NO DATA</span>
-              <% elsif saved >= 0 %>
-                <span style="font-size:10px;color:#639922;letter-spacing:1px;">SAVED</span>
-              <% else %>
-                <span style="font-size:10px;color:#E24B4A;letter-spacing:1px;">OVER</span>
-              <% end %>
             </td>
           </tr>
         <% end %>
@@ -122,7 +116,7 @@
     <div>
       <div class="bottom-label">Monthly Budget</div>
       <div class="bottom-value" style="font-size:16px;">
-        ₹<%= @budget ? number_with_delimiter(@budget.amount.to_i) : "Not set" %>
+        ₹<%= number_with_delimiter(@monthly_data.sum { |m| m[:budget].to_i }) %>
       </div>
     </div>
   </div>

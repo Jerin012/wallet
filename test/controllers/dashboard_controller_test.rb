@@ -2,22 +2,27 @@ require "test_helper"
 
 class DashboardControllerTest < ActionDispatch::IntegrationTest
   test "should get index" do
-    get dashboard_index_url
+    get root_url
+    assert_response :success
+  end
+
+  test "should get index for selected month" do
+    get root_url, params: { month: "2026-04" }
     assert_response :success
   end
 
   test "should get daily" do
-    get dashboard_daily_url
+    get daily_url
     assert_response :success
   end
 
   test "should get monthly" do
-    get dashboard_monthly_url
+    get monthly_url, params: { month: "2026-04" }
     assert_response :success
   end
 
   test "should get savings" do
-    get dashboard_savings_url
+    get savings_url
     assert_response :success
   end
 end

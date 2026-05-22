@@ -2,12 +2,12 @@ require "test_helper"
 
 class MarkedDatesControllerTest < ActionDispatch::IntegrationTest
   test "should get create" do
-    get marked_dates_create_url
+    post marked_dates_url
     assert_response :success
   end
 
   test "should get destroy" do
-    get marked_dates_destroy_url
+    delete marked_date_url(marked_dates(:one))
     assert_response :success
   end
 end
